@@ -1,13 +1,23 @@
+##
+# FMM ("functional micromachine") is a simple finite-state machine inspired by 
+# the MicroMachine gem, (https://github.com/soveran/micromachine/) but implemented
+# in a funtional idiom using data structures, rather than the mutable state of
+# an instance of class `MicroMachine`.
 module FMM
-  class InvalidEvent < NoMethodError; end
+  class InvalidEvent < ArgumentError; end
   class InvalidState < ArgumentError; end
-  class InvalidMachine < TypeError; end   # this is ultimately a data error
+  class InvalidMachine < TypeError; end
 
   extend self
 
+  ##
+  # The key denoting our machine. Note that if you wanted to change this,
+  # you might `module FMM; MACHINE_KEY = :foo; end` before loading the
+  # FMM gem
   MACHINE_KEY ||= :_fmm
 
-  # validate a state machine; defacto specification; no
+  ##
+  # Validate a state machine; defacto specification; no
   # state for which this method returns true should ever
   # crash with an InvalidMachine error
   def validate!(state)
