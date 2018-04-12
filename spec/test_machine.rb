@@ -2,6 +2,8 @@ module FMM
   module TestMachine
     extend self
 
+    ##
+    # The format of a machine: 
     def create
       { MACHINE_KEY => 
         {
