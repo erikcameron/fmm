@@ -5,46 +5,48 @@ module FMM
 
   extend self
 
+  MACHINE_KEY ||= :_fmm
+
   # validate a state machine; defacto specification; no
   # state for which this method returns true should ever
   # crash with an InvalidMachine error
   def validate!(state)
     # The state is a Hash-like object (HLO) with a value
-    # at key :_machine
-    unless state[:_machine]
+    # at key MACHINE_KEY
+    unless state[MACHINE_KEY]
       raise InvalidMachine, "no state machine found: #{state}"
     end
 
     # The machine has a current state 
-    unless state[:_machine][:current]
+    unless state[MACHINE_KEY][:current]
       raise InvalidMachine, "no current state: #{state}"
     end
 
     # The machine specifies a set of transitions (and hence states)
-    unless state[:_machine][:transitions]
+    unless state[MACHINE_KEY][:transitions]
       raise InvalidMachine, "you must specify some transitions: #{state}"
     end
 
     # The transitions table must be a HLO...
-    unless state[:_machine][:transitions].is_a?(Hash)
+    unless state[MACHINE_KEY][:transitions].is_a?(Hash)
       raise InvalidMachine, "transitions must be a hash: #{state}"
     end
 
     # ...all of whose values are also HLOs
-    unless state[:_machine][:transitions].values.map { |v| v.is_a?(Hash) }.inject(:&)
+    unless state[MACHINE_KEY][:transitions].values.map { |v| v.is_a?(Hash) }.inject(:&)
       raise InvalidMachine, "transitions must be a hash of hashes: #{state}"
     end
       
     # Callbacks (which are all post-transition; see below) are optional,
     # but if they exist...
-    if state[:_machine][:callbacks]
+    if state[MACHINE_KEY][:callbacks]
       # ...they must be in a HLO...
-      unless state[:_machine][:callbacks].is_a?(Hash)
+      unless state[MACHINE_KEY][:callbacks].is_a?(Hash)
         raise InvalidMachine, "callbacks must be a hash: #{state}"
       end
       
       # ...whose values are either callables or collections thereof
-      valid_callbacks = state[:_machine][:callbacks].values.flatten.map do |v| 
+      valid_callbacks = state[MACHINE_KEY][:callbacks].values.flatten.map do |v| 
         v.respond_to?(:call)
       end.inject(:&)
       
@@ -54,7 +56,7 @@ module FMM
     end
    
     # Aliases are optional, but if they exist...
-    if state[:_machine][:aliases]
+    if state[MACHINE_KEY][:aliases]
       # ...they must be in a HLO. This is all we can actually
       # say about aliases, other than this: The keys of this
       # HLO correspond to states, but can be of any type; 
@@ -63,7 +65,7 @@ module FMM
       # thereof, but that doesn't actually place any type limitation
       # on what the values _are_, other than not letting them be
       # arrays, because they will be flattened.
-      unless state[:_machine][:aliases].is_a?(Hash)
+      unless state[MACHINE_KEY][:aliases].is_a?(Hash)
         raise InvalidMachine, "aliases must be a hash: #{state}"
       end
     end
@@ -85,7 +87,7 @@ module FMM
   # talk to the machine object
   
   def current(state)
-    state[:_machine][:current]
+    state[MACHINE_KEY][:current]
   rescue => err
     # reraise as an explicit InvalidMachine;
     # get the orig out of #cause
@@ -93,19 +95,19 @@ module FMM
   end  
 
   def transitions(state)
-    state[:_machine][:transitions]
+    state[MACHINE_KEY][:transitions]
   rescue => err
     raise InvalidMachine, '#transitions'
   end
 
   def callbacks(state)
-    state[:_machine][:callbacks]  || {}
+    state[MACHINE_KEY][:callbacks]  || {}
   rescue => err
     raise InvalidMachine, '#callbacks'
   end
 
   def aliases_for(state)
-    state[:_machine][:aliases] ? state[:_machine][:aliases][current(state)] : nil
+    state[MACHINE_KEY][:aliases] ? state[MACHINE_KEY][:aliases][current(state)] : nil
   end
 
   # from most to least specific, as this is the order
@@ -142,8 +144,8 @@ private
   # there was a whole one-person debate here about the
   # point/utility of pre-transition callbacks; if they
   # actually prove to be something useful, we can add them
-  # without breaking existing machines. ([:_machine][:before],
-  # at which point, we can just construe [:_machine][:callbacks]
+  # without breaking existing machines. ([MACHINE_KEY][:before],
+  # at which point, we can just construe [MACHINE_KEY][:callbacks]
   # as synonymous with [:post]) for now, i don't really see what 
   # purpose they serve in this sort of application other than 
   # being able to veto state changes, maybe; for now i say poo 
@@ -170,7 +172,7 @@ private
 
   def update_machine_state(state, target)
     raise InvalidState, "nil target" unless target
-    new_machine = state[:_machine].merge({ current: target })
-    state.merge({ _machine: new_machine })
+    new_machine = state[MACHINE_KEY].merge({ current: target })
+    state.merge({ MACHINE_KEY => new_machine })
   end
 end

@@ -3,7 +3,7 @@ module FMM
     extend self
 
     def create
-      { _machine:
+      { MACHINE_KEY => 
         {
           current: :new,
           transitions: TRANSITIONS,
